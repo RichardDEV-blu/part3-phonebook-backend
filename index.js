@@ -22,16 +22,31 @@ let persons = [
     number: "39-23-6423122"
   }
 ]
-app.get('/api/persons',(req,res)=>{
-    res.json(persons)
+app.get('/api/persons',(request,response)=>{
+    response.json(persons)
 })
 
-app.get('/info', (req,res)=>{
+app.get('/api/persons/:id', (request,response)=>{
+    const id = Number(request.params.id)
+    const p = persons.find(p => p.id ===id)
+    if (p){
+        response.json(p)
+    } else {
+        response.status(404).end()
+
+    }
+
+
+})
+
+app.get('/info', (request,response)=>{
     const date = new Date()
-    res.send(`
+    response.send(`
     <p>Phonebook has info for ${persons.length} people</p>
     <p>${date}</p>`)
 })
+
+
 
 const PORT = 3001
 app.listen(PORT, ()=>{
