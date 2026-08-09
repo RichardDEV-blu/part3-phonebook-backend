@@ -63,6 +63,22 @@ app.post('/api/persons', (request, response) => {
     })
 })
 
+app.put('/api/persons/:id',(request, response, next)=>{
+    const {name, number} = request.body
+    Person.findByIdAndUpdate(
+        request.params.id,
+        {name, number},
+        {new: true}  
+    ).then (updatedPerson=>{
+        if (updatedPerson) {
+                response.json(updatedPerson)
+            } else {
+                response.status(404).end()
+            }
+    })
+    .catch(error => next(error))
+})
+
 const errorHandler = (error, req, res, next)=>{
     console.error(error.message)
     if(error.name === 'CastError'){
