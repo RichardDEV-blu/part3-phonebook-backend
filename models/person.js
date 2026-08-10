@@ -17,9 +17,18 @@ const personSchema = new mongoose.Schema({
         type: String,
         minLength: [3, 'Name must have at least 3 characters'],
         required: [true, 'Name is mandatory']
-    
     },
-    number: String
+    number: {
+        type: String,
+        minLength: [8, 'Number must have at least 8 characters'],
+        validate: {
+            validator: function (v) {
+                return /^\d{2,3}-\d+$/.test(v)
+            },
+            message: props => `${props.value} does not have a valid format (ej: 09-1234556)`
+        },
+        required: [true, 'Number is mandatory']
+    }
 })
 
 personSchema.set('toJSON', {
