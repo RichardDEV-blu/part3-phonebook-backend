@@ -44,7 +44,7 @@ app.delete('/api/persons/:id', (request, response, next) => {
     .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
     const body = request.body
 
     if (!body.name || !body.number) {
@@ -58,9 +58,11 @@ app.post('/api/persons', (request, response) => {
         number: body.number
     })
 
-    person.save().then(saved => {
+    person.save()
+    .then(saved => {
         response.json(saved)
     })
+    .catch(error => next(error))
 })
 
 app.put('/api/persons/:id',(request, response, next)=>{
@@ -68,7 +70,7 @@ app.put('/api/persons/:id',(request, response, next)=>{
     Person.findByIdAndUpdate(
         request.params.id,
         {name, number},
-        {new: true}  
+        {new: true, runValidators: true, context:'query'}  
     ).then (updatedPerson=>{
         if (updatedPerson) {
                 response.json(updatedPerson)
@@ -83,6 +85,8 @@ const errorHandler = (error, req, res, next)=>{
     console.error(error.message)
     if(error.name === 'CastError'){
         return res.status(400).send({error: 'malformatted id'})
+    } else if (error.name === 'ValidationError'){
+        return res.status(400).json({error: error.message})
     }
     next (error)
 
@@ -94,4 +98,4 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 })
 
-// 3.18 is already completed since we deleted the array.
+
