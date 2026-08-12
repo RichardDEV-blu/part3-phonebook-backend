@@ -34,10 +34,38 @@ const mostBlogs = (blogs) => {
 
 }
 
+const mostLikes = (blogs) => {
+  const blogsByAuthor = _.groupBy(blogs,'author')
+  const authorsNames = Object.keys(blogsByAuthor)
+  const likesByAuthor = {}
+
+  authorsNames.forEach(a => {
+
+    const blogs = blogsByAuthor[a]
+
+    const likes = blogs.reduce((acc, blog)=>{
+      return acc + blog.likes
+    },0)
+
+    likesByAuthor[a] = likes
+  })
+
+  const author = _.maxBy(
+    Object.keys(likesByAuthor), (a)=>likesByAuthor[a]
+  )
+
+  return {
+    author,
+    likes: likesByAuthor[author]
+
+  }
+}
+
 module.exports = {
   dummy,
   totalLikes,
   favoriteBlog,
-  mostBlogs
+  mostBlogs,
+  mostLikes
 }
 
