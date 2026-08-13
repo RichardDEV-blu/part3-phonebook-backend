@@ -39,8 +39,8 @@ const initialBlogs = [
     }
 ]
 
-const initializeBlogs= async () => {
- await Blog.deleteMany({})
+const initializeBlogs = async () => {
+    await Blog.deleteMany({})
 
     const blogObjects = initialBlogs
         .map(blog => new Blog(blog))
@@ -48,10 +48,15 @@ const initializeBlogs= async () => {
     const promiseArray = blogObjects.map(blog => blog.save())
 
     await Promise.all(promiseArray)
+}
 
+const blogsInDb = async () => {
+    const blogs = await Blog.find({})
+    return blogs.map(blog => blog.toJSON())
 }
 
 module.exports = {
     initialBlogs,
-    initializeBlogs
+    initializeBlogs,
+    blogsInDb
 }
