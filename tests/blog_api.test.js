@@ -133,6 +133,58 @@ describe('when there is initially some blogs saved', () => {
 
     })
 
+
+    describe('updating a blog', () => {
+
+        test('succeeds with valid data', async () => {
+            const blogsAtStart = await helper.blogsInDb()
+            const toUpdate = blogsAtStart[0]
+
+            const updated = {
+                title: toUpdate.title,
+                author: toUpdate.author,
+                url: toUpdate.url,
+                likes: toUpdate.likes + 1
+            }
+
+            const response = await api
+                .put(`/api/blogs/${toUpdate.id}`)
+                .send(updated)
+                .expect(200)
+
+              assert.strictEqual(response.body.likes, toUpdate.likes + 1)
+        })
+
+        test('the updated blog is saved in the database', async () => {
+            const blogsAtStart = await helper.blogsInDb()
+            const toUpdate = blogsAtStart[0]
+
+            const updated = {
+                title: toUpdate.title,
+                author: toUpdate.author,
+                url: toUpdate.url,
+                likes: toUpdate.likes + 1
+            }
+
+            await api
+                .put(`/api/blogs/${toUpdate.id}`)
+                .send(updated)
+                .expect(200)
+
+            const blogsAtEnd = await helper.blogsInDb()
+
+            const updatedInMongo = blogsAtEnd.find(
+                blog => blog.id === toUpdate.id
+            )
+
+            assert.strictEqual(
+                updatedInMongo.likes,
+                toUpdate.likes + 1
+            )
+        })
+
+    })
+
 })
 
 after(async () => {
