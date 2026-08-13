@@ -3,6 +3,7 @@ dns.setServers(['8.8.8.8', '1.1.1.1'])
 
 const config = require('./utils/config')
 const express = require('express')
+require('express-async-errors')
 const cors = require('cors')
 const blogsRouter = require('./controllers/blogs')
 const logger = require('./utils/logger')
