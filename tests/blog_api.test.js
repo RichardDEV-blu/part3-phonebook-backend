@@ -217,30 +217,158 @@ describe('when there is initially some blogs saved', () => {
     })
 
     describe('deletion of a blog', () => {
-        test('succeeds with status 204 if id is valid', async () => {
-            const blogsAtStart = await helper.blogsInDb()
-            const toDelete = blogsAtStart[0]
+
+        test('succeeds with status 204 if id is valid and user is the owner', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
+            const newBlog = {
+                title: 'Blog to delete',
+                author: 'Richard',
+                url: 'https://example.com',
+                likes: 5
+            }
+
+            const response = await api
+                .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
+                .send(newBlog)
+                .expect(201)
 
             await api
-                .delete(`/api/blogs/${toDelete.id}`)
+                .delete(`/api/blogs/${response.body.id}`)
+                .set('Authorization', `Bearer ${token}`)
                 .expect(204)
 
             const blogsAtEnd = await helper.blogsInDb()
 
             assert.strictEqual(
                 blogsAtEnd.length,
-                helper.initialBlogs.length - 1
+                helper.initialBlogs.length
             )
 
             const titles = blogsAtEnd.map(b => b.title)
-            assert(!titles.includes(toDelete.title))
+            assert(!titles.includes('Blog to delete'))
         })
 
+
+        test('fails with status 401 if user is not the owner', async () => {
+            const firstLogin = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const firstToken = firstLogin.body.token
+
+            const newUser = {
+                username: 'seconduser',
+                name: 'Second User',
+                password: 'password'
+            }
+
+            await api
+                .post('/api/users')
+                .send(newUser)
+                .expect(201)
+
+            const secondLogin = await api
+                .post('/api/login')
+                .send({
+                    username: 'seconduser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const secondToken = secondLogin.body.token
+
+            const newBlog = {
+                title: 'Blog owned by testuser',
+                author: 'Richard',
+                url: 'https://example.com',
+                likes: 5
+            }
+
+            const response = await api
+                .post('/api/blogs')
+                .set('Authorization', `Bearer ${firstToken}`)
+                .send(newBlog)
+                .expect(201)
+
+            await api
+                .delete(`/api/blogs/${response.body.id}`)
+                .set('Authorization', `Bearer ${secondToken}`)
+                .expect(401)
+
+            const blogsAtEnd = await helper.blogsInDb()
+
+            assert(
+                blogsAtEnd.some(blog => blog.id === response.body.id)
+            )
+        })
+
+
+        test('fails with status 401 if token is not provided', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
+            const newBlog = {
+                title: 'Blog without delete token',
+                author: 'Richard',
+                url: 'https://example.com',
+                likes: 5
+            }
+
+            const response = await api
+                .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
+                .send(newBlog)
+                .expect(201)
+
+            await api
+                .delete(`/api/blogs/${response.body.id}`)
+                .expect(401)
+
+            const blogsAtEnd = await helper.blogsInDb()
+
+            assert(
+                blogsAtEnd.some(blog => blog.id === response.body.id)
+            )
+        })
+
+
         test('fails with status code 400 if id is invalid', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const invalidID = '123invalid65FG32'
 
             await api
                 .delete(`/api/blogs/${invalidID}`)
+                .set('Authorization', `Bearer ${token}`)
                 .expect(400)
         })
 
