@@ -32,6 +32,16 @@ describe('when there is initially some blogs saved', () => {
 
     describe('addition of a new blog', () => {
         test('succeeds with valid data', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const newBlog = {
                 title: 'Testing blog',
                 author: 'Richard',
@@ -41,6 +51,7 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
                 .expect('Content-Type', /application\/json/)
@@ -51,13 +62,26 @@ describe('when there is initially some blogs saved', () => {
             assert.strictEqual(response.body.likes, newBlog.likes)
 
             const blogsAtEnd = await helper.blogsInDb()
-            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length + 1)
+            assert.strictEqual(
+                blogsAtEnd.length,
+                helper.initialBlogs.length + 1
+            )
 
             const titles = blogsAtEnd.map(b => b.title)
             assert(titles.includes('Testing blog'))
         })
 
         test('if likes is missing, it defaults to 0', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const newBlog = {
                 title: 'Blog without likes',
                 author: 'Richard',
@@ -66,6 +90,7 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
 
@@ -73,6 +98,16 @@ describe('when there is initially some blogs saved', () => {
         })
 
         test('fails with status code 400 if title is missing', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const newBlog = {
                 author: 'Richard',
                 url: 'https://example.com',
@@ -81,14 +116,28 @@ describe('when there is initially some blogs saved', () => {
 
             await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(400)
 
             const blogsAtEnd = await helper.blogsInDb()
-            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+            assert.strictEqual(
+                blogsAtEnd.length,
+                helper.initialBlogs.length
+            )
         })
 
         test('fails with status code 400 if url is missing', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const newBlog = {
                 title: 'Blog without URL',
                 author: 'Richard',
@@ -97,14 +146,28 @@ describe('when there is initially some blogs saved', () => {
 
             await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(400)
 
             const blogsAtEnd = await helper.blogsInDb()
-            assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
+            assert.strictEqual(
+                blogsAtEnd.length,
+                helper.initialBlogs.length
+            )
         })
 
         test('the creator of the blog is returned with the blog', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const newBlog = {
                 title: 'Blog with creator',
                 author: 'Richard',
@@ -114,6 +177,7 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .post('/api/blogs')
+                .set('Authorization', `Bearer ${token}`)
                 .send(newBlog)
                 .expect(201)
 
@@ -127,6 +191,27 @@ describe('when there is initially some blogs saved', () => {
 
             assert.strictEqual(createdBlog.user.username, 'testuser')
             assert.strictEqual(createdBlog.user.name, 'Test User')
+        })
+
+        test('fails with status code 401 if token is not provided', async () => {
+            const newBlog = {
+                title: 'Blog without token',
+                author: 'Richard',
+                url: 'https://example.com',
+                likes: 5
+            }
+
+            await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(401)
+
+            const blogsAtEnd = await helper.blogsInDb()
+
+            assert.strictEqual(
+                blogsAtEnd.length,
+                helper.initialBlogs.length
+            )
         })
 
     })
