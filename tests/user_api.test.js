@@ -144,51 +144,51 @@ describe('user creation', () => {
     })
 
     test('the blogs created by the user are returned with the user', async () => {
-    const newUser = {
-        username: 'testuser',
-        name: 'Test User',
-        password: 'password'
-    }
-
-    await api
-        .post('/api/users')
-        .send(newUser)
-        .expect(201)
-
-    const loginResponse = await api
-        .post('/api/login')
-        .send({
+        const newUser = {
             username: 'testuser',
+            name: 'Test User',
             password: 'password'
-        })
-        .expect(200)
+        }
 
-    const token = loginResponse.body.token
+        await api
+            .post('/api/users')
+            .send(newUser)
+            .expect(201)
 
-    const newBlog = {
-        title: 'Blog created by user',
-        author: 'Richard',
-        url: 'https://example.com',
-        likes: 5
-    }
+        const loginResponse = await api
+            .post('/api/login')
+            .send({
+                username: 'testuser',
+                password: 'password'
+            })
+            .expect(200)
 
-    await api
-        .post('/api/blogs')
-        .set('Authorization', `Bearer ${token}`)
-        .send(newBlog)
-        .expect(201)
+        const token = loginResponse.body.token
 
-    const users = await api
-        .get('/api/users')
-        .expect(200)
+        const newBlog = {
+            title: 'Blog created by user',
+            author: 'Richard',
+            url: 'https://example.com',
+            likes: 5
+        }
 
-    const user = users.body.find(
-        user => user.username === 'testuser'
-    )
+        await api
+            .post('/api/blogs')
+            .set('Authorization', `Bearer ${token}`)
+            .send(newBlog)
+            .expect(201)
 
-    assert.strictEqual(user.blogs.length, 1)
-    assert.strictEqual(user.blogs[0].title, 'Blog created by user')
-})
+        const users = await api
+            .get('/api/users')
+            .expect(200)
+
+        const user = users.body.find(
+            user => user.username === 'testuser'
+        )
+
+        assert.strictEqual(user.blogs.length, 1)
+        assert.strictEqual(user.blogs[0].title, 'Blog created by user')
+    })
 
 })
 
