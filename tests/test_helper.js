@@ -44,12 +44,21 @@ const initialBlogs = [
 const initializeBlogs = async () => {
     await Blog.deleteMany({})
 
-    const blogObjects = initialBlogs
-        .map(blog => new Blog(blog))
+    const user = await User.findOne({ username: 'testuser' })
+
+    const blogObjects = initialBlogs.map(blog =>
+        new Blog({
+            ...blog,
+            user: user._id
+        })
+    )
 
     const promiseArray = blogObjects.map(blog => blog.save())
 
     await Promise.all(promiseArray)
+
+    user.blogs = blogObjects.map(blog => blog._id)
+    await user.save()
 }
 
 const blogsInDb = async () => {

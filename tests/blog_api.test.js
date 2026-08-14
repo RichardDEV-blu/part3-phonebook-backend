@@ -9,8 +9,8 @@ const helper = require('./test_helper')
 
 describe('when there is initially some blogs saved', () => {
     beforeEach(async () => {
-        await helper.initializeBlogs()
         await helper.initializeUsers()
+        await helper.initializeBlogs()
     })
 
     test('blogs are returned as JSON', async () => {
@@ -376,8 +376,17 @@ describe('when there is initially some blogs saved', () => {
 
 
     describe('updating a blog', () => {
-
         test('succeeds with valid data', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const blogsAtStart = await helper.blogsInDb()
             const toUpdate = blogsAtStart[0]
 
@@ -390,13 +399,28 @@ describe('when there is initially some blogs saved', () => {
 
             const response = await api
                 .put(`/api/blogs/${toUpdate.id}`)
+                .set('Authorization', `Bearer ${token}`)
                 .send(updated)
                 .expect(200)
 
-            assert.strictEqual(response.body.likes, toUpdate.likes + 1)
+            assert.strictEqual(
+                response.body.likes,
+                toUpdate.likes + 1
+            )
         })
 
+
         test('the updated blog is saved in the database', async () => {
+            const loginResponse = await api
+                .post('/api/login')
+                .send({
+                    username: 'testuser',
+                    password: 'password'
+                })
+                .expect(200)
+
+            const token = loginResponse.body.token
+
             const blogsAtStart = await helper.blogsInDb()
             const toUpdate = blogsAtStart[0]
 
@@ -409,6 +433,7 @@ describe('when there is initially some blogs saved', () => {
 
             await api
                 .put(`/api/blogs/${toUpdate.id}`)
+                .set('Authorization', `Bearer ${token}`)
                 .send(updated)
                 .expect(200)
 

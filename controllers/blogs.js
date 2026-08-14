@@ -1,7 +1,7 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
-const jwt = require('jsonwebtoken')
+
+const middleware = require('../utils/middleware')
 
 
 blogsRouter.get('/', async (request, response) => {
@@ -12,35 +12,8 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 
-blogsRouter.post('/', async (request, response) => {
-    const token = request.token
-
-    if (!token) {
-        return response.status(401).json({
-            error: 'token missing'
-        })
-    }
-
-    let decodedToken
-
-    try {
-        decodedToken = jwt.verify(
-            token,
-            process.env.SECRET
-        )
-    } catch (error) {
-        return response.status(401).json({
-            error: 'token invalid'
-        })
-    }
-
-    if (!decodedToken.id) {
-        return response.status(401).json({
-            error: 'token invalid'
-        })
-    }
-
-    const user = await User.findById(decodedToken.id)
+blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
+    const user = request.user
 
     const blog = new Blog({
         ...request.body,
@@ -56,31 +29,8 @@ blogsRouter.post('/', async (request, response) => {
 })
 
 
-blogsRouter.delete('/:id', async (request, response) => {
-    if (!request.token) {
-        return response.status(401).json({
-            error: 'token missing'
-        })
-    }
-
-    let decodedToken
-
-    try {
-        decodedToken = jwt.verify(
-            request.token,
-            process.env.SECRET
-        )
-    } catch (error) {
-        return response.status(401).json({
-            error: 'token invalid'
-        })
-    }
-
-    if (!decodedToken.id) {
-        return response.status(401).json({
-            error: 'token invalid'
-        })
-    }
+blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
+    const user = request.user
 
     const blog = await Blog.findById(request.params.id)
 
@@ -88,7 +38,7 @@ blogsRouter.delete('/:id', async (request, response) => {
         return response.status(404).end()
     }
 
-    if (blog.user.toString() !== decodedToken.id.toString()) {
+    if (blog.user.toString() !== user._id.toString()) {
         return response.status(401).json({
             error: 'user not authorized to delete this blog'
         })
@@ -100,7 +50,21 @@ blogsRouter.delete('/:id', async (request, response) => {
 })
 
 
-blogsRouter.put('/:id', async (request, response) => {
+blogsRouter.put('/:id', middleware.userExtractor, async (request, response) => {
+    const user = request.user
+
+    const blog = await Blog.findById(request.params.id)
+
+    if (!blog) {
+        return response.status(404).end()
+    }
+
+    if (blog.user.toString() !== user._id.toString()) {
+        return response.status(401).json({
+            error: 'user not authorized to update this blog'
+        })
+    }
+
     const body = request.body
 
     const updatedBlog = {
