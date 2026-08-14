@@ -6,9 +6,11 @@ const app = require('../app')
 const api = supertest(app)
 const helper = require('./test_helper')
 
+
 describe('when there is initially some blogs saved', () => {
     beforeEach(async () => {
         await helper.initializeBlogs()
+        await helper.initializeUsers()
     })
 
     test('blogs are returned as JSON', async () => {
@@ -101,6 +103,32 @@ describe('when there is initially some blogs saved', () => {
             const blogsAtEnd = await helper.blogsInDb()
             assert.strictEqual(blogsAtEnd.length, helper.initialBlogs.length)
         })
+
+        test('the creator of the blog is returned with the blog', async () => {
+            const newBlog = {
+                title: 'Blog with creator',
+                author: 'Richard',
+                url: 'https://example.com',
+                likes: 5
+            }
+
+            const response = await api
+                .post('/api/blogs')
+                .send(newBlog)
+                .expect(201)
+
+            const blogs = await api
+                .get('/api/blogs')
+                .expect(200)
+
+            const createdBlog = blogs.body.find(
+                blog => blog.id === response.body.id
+            )
+
+            assert.strictEqual(createdBlog.user.username, 'testuser')
+            assert.strictEqual(createdBlog.user.name, 'Test User')
+        })
+
     })
 
     describe('deletion of a blog', () => {
@@ -152,7 +180,7 @@ describe('when there is initially some blogs saved', () => {
                 .send(updated)
                 .expect(200)
 
-              assert.strictEqual(response.body.likes, toUpdate.likes + 1)
+            assert.strictEqual(response.body.likes, toUpdate.likes + 1)
         })
 
         test('the updated blog is saved in the database', async () => {
